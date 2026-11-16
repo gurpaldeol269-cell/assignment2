@@ -11,6 +11,8 @@ _NEXT_REQUISITION_NUMBER = 1
 class Requisition:
     """Stores one requisition and provides its main operations."""
 
+    _requisitions: list["Requisition"] = []
+
     def __init__(self) -> None:
         """Initialize the shared data for one requisition."""
         global _NEXT_REQUISITION_NUMBER
@@ -24,6 +26,7 @@ class Requisition:
         self.status = "Pending"
         self.approval_reference: str | None = None
         _NEXT_REQUISITION_NUMBER += 1
+        self._requisitions.append(self)
 
     def add_requisition(
         self,
@@ -72,6 +75,23 @@ class Requisition:
 
         return self.status, self.approval_reference
 
+    def respond_to_requisition(self, response: str) -> str:
+        """Allow a manager to approve or reject a pending requisition."""
+        if self.status != "Pending":
+            raise ValueError("Only pending requisitions can receive a response.")
+
+        normalized_response = response.strip().lower()
+        if normalized_response == "approved":
+            self.status = "Approved"
+            self.approval_reference = f"{self.staff_id}{self.requisition_id[-3:]}"
+        elif normalized_response in {"not approved", "notapproved"}:
+            self.status = "Not approved"
+            self.approval_reference = None
+        else:
+            raise ValueError("Response must be Approved or Not approved.")
+
+        return self.status
+
     def display_requisitions(self) -> None:
         """Display the requisition details and approval information."""
         print("\nPrinting requisition:")
@@ -84,6 +104,47 @@ class Requisition:
         print(
             "Approval Reference Number: "
             f"{self.approval_reference or 'Not available'}"
+        )
+
+    @classmethod
+    def display_all_requisitions(cls) -> None:
+        """Display every requisition created during this program run."""
+        for requisition in cls._requisitions:
+            requisition.display_requisitions()
+
+    @classmethod
+    def requisition_statistics(cls) -> dict[str, int]:
+        """Return counts of submitted requisitions grouped by status."""
+        statistics = {
+            "total": len(cls._requisitions),
+            "approved": 0,
+            "pending": 0,
+            "not approved": 0,
+        }
+        for requisition in cls._requisitions:
+            statistics[requisition.status.lower()] += 1
+        return statistics
+
+    @classmethod
+    def display_statistics(cls) -> None:
+        """Display requisition statistics on the console."""
+        statistics = cls.requisition_statistics()
+        print("\nDisplaying the Requisition Statistics")
+        print(
+            "The total number of requisitions submitted: "
+            f"{statistics['total']}"
+        )
+        print(
+            "The total number of approved requisitions: "
+            f"{statistics['approved']}"
+        )
+        print(
+            "The total number of pending requisitions: "
+            f"{statistics['pending']}"
+        )
+        print(
+            "The total number of not approved requisitions: "
+            f"{statistics['not approved']}"
         )
 
     @staticmethod
@@ -133,25 +194,29 @@ class Requisition:
 
 def main() -> None:
     """Create and display example requisitions for testing."""
-    approved_requisition = Requisition()
-    approved_requisition.add_requisition(
-        "03/04/2024",
-        "FN19",
-        "John Paul",
-        [("Coffee", 200), ("Paper", 100), ("Pen", 50)],
-    )
-    approved_requisition.approve_requisition()
-    approved_requisition.display_requisitions()
+    requisitions = [
+        ("03/04/2024", "FN19", "John Paul", [("Coffee", 200), ("Paper", 100)]),
+        ("04/04/2024", "FN20", "Alex Smith", [("Laptop", 750)]),
+        ("07/05/2024", "FN15", "Emma Wellington", [("Equipment", 3500)]),
+        ("03/05/2024", "FN02", "Catlin White", [("Stationery", 490)]),
+        ("08/05/2024", "FN21", "Jordan Lee", [("Desk", 500)]),
+    ]
 
-    pending_requisition = Requisition()
-    pending_requisition.add_requisition(
-        "04/04/2024",
-        "FN20",
-        "Alex Smith",
-        [("Laptop", 750)],
-    )
-    pending_requisition.approve_requisition()
-    pending_requisition.display_requisitions()
+    submitted = []
+    for date, staff_id, staff_name, items in requisitions:
+        requisition = Requisition()
+        requisition.add_requisition(date, staff_id, staff_name, items)
+        requisition.approve_requisition()
+        submitted.append(requisition)
+
+    Requisition.display_statistics()
+
+    submitted[1].respond_to_requisition("Approved")
+    submitted[2].respond_to_requisition("Not approved")
+    submitted[4].respond_to_requisition("Approved")
+
+    Requisition.display_all_requisitions()
+    Requisition.display_statistics()
 
 
 if __name__ == "__main__":
