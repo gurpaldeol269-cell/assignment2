@@ -213,7 +213,6 @@ def main() -> None:
 
     submitted[1].respond_to_requisition("Approved")
     submitted[2].respond_to_requisition("Not approved")
-    submitted[4].respond_to_requisition("Approved")
 
     Requisition.display_all_requisitions()
     Requisition.display_statistics()
