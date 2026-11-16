@@ -175,7 +175,7 @@ def main():
     # Requisition 10003 ($3500) -> Not approved by manager
     submitted_requisitions[2].respond_to_requisition("Not approved")
 
-    # Requisition 10005 ($500) -> Left as Pending
+    # Requisition 10005 ($500) -> Left as Pending (proves $500 boundary stays pending)
 
     # 4. Display all requisitions and updated statistics
     Requisition.display_requisitions()
